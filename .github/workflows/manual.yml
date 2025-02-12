@@ -44,12 +44,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
       with:
-        path: sources
+        repository: realm/realm-swift
+        ref: "v${{ github.event.inputs.realm-version }}"
+        path: realm
 
     - name: Build frameworks
       run: |
-        pwd
-        ls -l
+        cd realm
         ./build.sh download-core
         ./build.sh build ios
         ls -l build/Release/ios
