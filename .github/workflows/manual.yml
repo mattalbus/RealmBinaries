@@ -36,19 +36,21 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+    - name: Select Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: "${{ github.event.inputs.xcode-version }}"
+        
     - name: Checkout
       uses: actions/checkout@v3
       with:
         path: sources
 
-    - name: Select Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: "${{ github.event.inputs.xcode-version }}"
-
     - name: Build frameworks
       run: |
-        bash build.sh download-core
-        bash build.sh build ios
+        pwd
+        ls -l
+        ./build.sh download-core
+        ./build.sh build ios
         ls -l build/Release/ios
  
