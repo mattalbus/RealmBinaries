@@ -12,7 +12,14 @@ on:
         # Friendly description to be shown in the UI instead of 'name'
         description: 'Realm version'
         # Default value if no value is explicitly provided
-        default: '10.40.2'
+        default: '10.54.2'
+        # Input has to be provided for the workflow to run
+        required: true
+      xcode-version:
+        # Friendly description to be shown in the UI instead of 'name'
+        description: 'Xcode version'
+        # Default value if no value is explicitly provided
+        default: '16.2.0'
         # Input has to be provided for the workflow to run
         required: true
 
@@ -33,47 +40,15 @@ jobs:
       uses: actions/checkout@v3
       with:
         path: sources
-      
-    - name: Download Realm prebuilt zip
-      uses: dsaltares/fetch-gh-release-asset@master
-      with:
-        repo: "realm/realm-swift"
-        version: "tags/v${{ github.event.inputs.realm-version }}"
-        file: "realm-swift-${{ github.event.inputs.realm-version }}.zip"
-        target: "./realm-swift-${{ github.event.inputs.realm-version }}.zip"
-        token: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Unzip archive
-      run: unzip realm-swift-${{ github.event.inputs.realm-version }}.zip
-      
-    - name: Zip xcframeworks
-      run: |
-        mv realm-swift-${{ github.event.inputs.realm-version }}/14.3.1/Realm.xcframework Realm.xcframework
-        zip -r Realm_14_3_1.xcframework.zip Realm.xcframework
-        mv realm-swift-${{ github.event.inputs.realm-version }}/14.3.1/RealmSwift.xcframework RealmSwift.xcframework
-        zip -r RealmSwift_14_3_1.xcframework.zip RealmSwift.xcframework
-        rm -rf Realm.xcframework
-        rm -rf RealmSwift.xcframework
-        mv realm-swift-${{ github.event.inputs.realm-version }}/14.2/Realm.xcframework Realm.xcframework
-        zip -r Realm_14_2_0.xcframework.zip Realm.xcframework
-        mv realm-swift-${{ github.event.inputs.realm-version }}/14.2/RealmSwift.xcframework RealmSwift.xcframework
-        zip -r RealmSwift_14_2_0.xcframework.zip RealmSwift.xcframework
 
-    - name: Print checksums
-      run: |
-        swift package --package-path sources compute-checksum Realm_14_2_0.xcframework.zip
-        swift package --package-path sources compute-checksum RealmSwift_14_2_0.xcframework.zip
-        swift package --package-path sources compute-checksum Realm_14_3_1.xcframework.zip
-        swift package --package-path sources compute-checksum RealmSwift_14_3_1.xcframework.zip
-
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      #if: startsWith(github.ref, 'refs/tags/')
+    - name: Select Xcode
+      uses: maxim-lobanov/setup-xcode@v1
       with:
-        name: ${{ github.event.inputs.realm-version }}
-        tag_name: ${{ github.event.inputs.realm-version }}
-        files: |
-          Realm_14_2_0.xcframework.zip
-          RealmSwift_14_2_0.xcframework.zip
-          Realm_14_3_1.xcframework.zip
-          RealmSwift_14_3_1.xcframework.zip
+        xcode-version: "${{ github.event.inputs.xcode-version }}"
+
+    - name: Build frameworks
+      run: |
+        bash build.sh download-core
+        bash build.sh build ios
+        ls -l build/Release/ios
+ 
