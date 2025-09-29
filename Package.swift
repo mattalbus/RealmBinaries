@@ -8,7 +8,7 @@ func buildTargets() -> [Target] {
     let realmUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(realmVersion)/Realm.spm.zip"
     let realmChecksum = "9750577a76b3c4a8149adf0f34d716807fe788bdb37431e18203258396f04fcd"
 
-#if swift(>=6.2)
+#if compiler(>=6.2)
     // Xcode 26.0
     let realmSwiftUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(realmVersion)/RealmSwift.spm.zip"
     let realmSwiftChecksum = "54f2f619e19ab60991977754c55919ad8f87fe451431947a0c24f23188ae93b0"
