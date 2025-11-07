@@ -12,14 +12,14 @@ on:
         # Friendly description to be shown in the UI instead of 'name'
         description: 'Realm version'
         # Default value if no value is explicitly provided
-        default: '10.54.2'
+        default: '20.0.3'
         # Input has to be provided for the workflow to run
         required: true
       xcode-version:
         # Friendly description to be shown in the UI instead of 'name'
         description: 'Xcode version'
         # Default value if no value is explicitly provided
-        default: '16.2.0'
+        default: '26.1.0'
         # Input has to be provided for the workflow to run
         required: true
 
@@ -28,7 +28,7 @@ jobs:
   # This workflow contains a single job called "process"
   process:
     # The type of runner that the job will run on
-    runs-on: macos-latest
+    runs-on: macos-26
     
     permissions:
       contents: write
