@@ -6,11 +6,11 @@ let realmVersion = "20.0.3"
 
 func buildTargets() -> [Target] {
     let realmUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(realmVersion)/Realm.spm.zip"
-    let realmChecksum = "9750577a76b3c4a8149adf0f34d716807fe788bdb37431e18203258396f04fcd"
+    let realmChecksum = "4ca80fc197758641c191013a189b911bae759fde2abf36729824291c65f3600a"
 
-    // Xcode 26.0
+    // Xcode 26.1
     let realmSwiftUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(realmVersion)/RealmSwift.spm.zip"
-    let realmSwiftChecksum = "54f2f619e19ab60991977754c55919ad8f87fe451431947a0c24f23188ae93b0"
+    let realmSwiftChecksum = "e70e952335faa3283880b3e0c26b1ed45f3de9b31b8f6ff7ec8a9b4086bd091f"
     
     return [
         .binaryTarget(
