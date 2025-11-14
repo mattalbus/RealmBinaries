@@ -3,11 +3,11 @@
 import PackageDescription
 
 let realmVersion = "20.0.3"
-let sofiaVersion = "2003.26.1"
+let sofiaVersion = "2003.1"
 
 func buildTargets() -> [Target] {
     let realmUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(sofiaVersion)/Realm.spm.zip"
-    let realmChecksum = "4ca80fc197758641c191013a189b911bae759fde2abf36729824291c65f3600a"
+    let realmChecksum = "ae406c71d00796e5a1855b546dd1281724883d391089e9c59068a084b88af212"
 
     // Xcode 26.1
     let realmSwiftUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(sofiaVersion)/RealmSwift.spm.zip"

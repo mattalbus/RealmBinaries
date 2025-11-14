@@ -3,7 +3,7 @@
 import PackageDescription
 
 let realmVersion = "20.0.3"
-let sofiaVersion = "2003.16.3"
+let sofiaVersion = "2003.1"
 
 func buildTargets() -> [Target] {
     let realmUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(sofiaVersion)/Realm.spm.zip"
