@@ -42,15 +42,15 @@ jobs:
         xcode-version: "${{ github.event.inputs.xcode-version }}"
         
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: realm/realm-swift
         ref: "v${{ github.event.inputs.realm-version }}"
         path: realm
 
     - name: Build frameworks
+      working-directory: realm
       run: |
-        cd realm
         sh build.sh build ios-swift
         ls -l build/Release/ios
  
