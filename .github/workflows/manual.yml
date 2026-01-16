@@ -52,6 +52,6 @@ jobs:
       run: |
         cd realm
         ./build.sh download-core
-        ./build.sh build ios-swift
+        ./build.sh build ios
         ls -l build/Release/ios
  
