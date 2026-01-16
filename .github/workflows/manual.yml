@@ -51,4 +51,17 @@ jobs:
       run: |
         sh build.sh build ios-swift
         ls -l build/Release/ios
+
+    - name: Store Realm.xcframework artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: Realm.xcframework
+        path: build/Release/ios/Realm.xcframework
+        
+    - name: Store RealmSwift.xcframework artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: RealmSwift.xcframework
+        path: build/Release/ios/RealmSwift.xcframework
+
  
