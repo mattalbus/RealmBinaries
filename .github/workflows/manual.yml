@@ -51,7 +51,6 @@ jobs:
     - name: Build frameworks
       run: |
         cd realm
-        ./build.sh download-core
-        ./build.sh build ios
+        sh build.sh build ios-swift
         ls -l build/Release/ios
  
