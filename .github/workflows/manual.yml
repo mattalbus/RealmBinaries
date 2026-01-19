@@ -50,18 +50,20 @@ jobs:
     - name: Build frameworks
       run: |
         sh build.sh build ios-swift
-        ls -l build/Release/ios
+        cd build/Release/ios
+        zip -r Realm.spm.zip Realm.xcframework
+        zip -r RealmSwift.spm.zip RealmSwift.xcframework
 
     - name: Store Realm.xcframework artifact
       uses: actions/upload-artifact@v6
       with:
-        name: Realm.xcframework
-        path: build/Release/ios/Realm.xcframework
+        name: Realm.spm
+        path: build/Release/ios/Realm.spm.zip
         
     - name: Store RealmSwift.xcframework artifact
       uses: actions/upload-artifact@v6
       with:
-        name: RealmSwift.xcframework
-        path: build/Release/ios/RealmSwift.xcframework
+        name: RealmSwift.spm
+        path: build/Release/ios/RealmSwift.spm.zip
 
  
