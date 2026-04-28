@@ -1,69 +1,93 @@
-# This is a basic workflow that is manually triggered
-
 name: Generate xcframework assets
 
-# Controls when the action will run. Workflow runs when manually triggered using the UI
-# or API.
 on:
   workflow_dispatch:
-    # Inputs the workflow accepts.
     inputs:
+      sofia-version:
+        description: 'Sofia version'
+        default: '2004.0.3'
+        required: true
       realm-version:
-        # Friendly description to be shown in the UI instead of 'name'
         description: 'Realm version'
-        # Default value if no value is explicitly provided
-        default: '20.0.3'
-        # Input has to be provided for the workflow to run
+        default: '20.0.4'
         required: true
       xcode-version:
-        # Friendly description to be shown in the UI instead of 'name'
         description: 'Xcode version'
-        # Default value if no value is explicitly provided
-        default: '26.1.0'
-        # Input has to be provided for the workflow to run
+        default: '26.4.1'
         required: true
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "process"
   process:
-    # The type of runner that the job will run on
     runs-on: macos-26
-    
+
     permissions:
       contents: write
       packages: write
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     - name: Select Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: "${{ github.event.inputs.xcode-version }}"
-        
-    - name: Checkout
+        xcode-version: "${{ inputs.xcode-version }}"
+
+    - name: Checkout realm-swift
       uses: actions/checkout@v5
       with:
         repository: realm/realm-swift
-        ref: "v${{ github.event.inputs.realm-version }}"
+        ref: "v${{ inputs.realm-version }}"
+
+    - name: Checkout RealmBinaries
+      uses: actions/checkout@v5
+      with:
+        path: realm-binaries
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build frameworks
       run: |
         sh build.sh build ios-swift
         cd build/Release/ios
-        zip -r Realm.spm.zip Realm.xcframework
-        zip -r RealmSwift.spm.zip RealmSwift.xcframework
+        ditto -c -k --sequesterRsrc --keepParent Realm.xcframework Realm.spm.zip
+        ditto -c -k --sequesterRsrc --keepParent RealmSwift.xcframework RealmSwift.spm.zip
 
     - name: Store Realm.xcframework artifact
       uses: actions/upload-artifact@v6
       with:
         name: Realm.spm
         path: build/Release/ios/Realm.spm.zip
-        
+
     - name: Store RealmSwift.xcframework artifact
       uses: actions/upload-artifact@v6
       with:
         name: RealmSwift.spm
         path: build/Release/ios/RealmSwift.spm.zip
 
- 
+    - name: Update Package.swift
+      working-directory: realm-binaries
+      run: |
+        REALM_CHECKSUM=$(swift package compute-checksum ../build/Release/ios/Realm.spm.zip)
+        REALMSWIFT_CHECKSUM=$(swift package compute-checksum ../build/Release/ios/RealmSwift.spm.zip)
+        sed -i '' -E "s/^let realmVersion = \".*\"/let realmVersion = \"${{ inputs.realm-version }}\"/" Package.swift
+        sed -i '' -E "s/^let sofiaVersion = \".*\"/let sofiaVersion = \"${{ inputs.sofia-version }}\"/" Package.swift
+        sed -i '' -E "s/^    let realmChecksum = \".*\"/    let realmChecksum = \"$REALM_CHECKSUM\"/" Package.swift
+        sed -i '' -E "s/^    let realmSwiftChecksum = \".*\"/    let realmSwiftChecksum = \"$REALMSWIFT_CHECKSUM\"/" Package.swift
+        sed -i '' -E "s|^    // Xcode .*|    // Xcode ${{ inputs.xcode-version }}|" Package.swift
+
+    - name: Commit Package.swift
+      working-directory: realm-binaries
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add Package.swift
+        git commit -m "Update to Realm ${{ inputs.realm-version }} for Xcode ${{ inputs.xcode-version }}"
+        git push
+
+    - name: Create GitHub release
+      working-directory: realm-binaries
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create "${{ inputs.sofia-version }}" \
+          ../build/Release/ios/Realm.spm.zip \
+          ../build/Release/ios/RealmSwift.spm.zip \
+          --title "${{ inputs.sofia-version }} (Realm ${{ inputs.realm-version }})" \
+          --notes "Supports Xcode ${{ inputs.xcode-version }}"
