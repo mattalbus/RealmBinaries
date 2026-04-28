@@ -89,5 +89,5 @@ jobs:
         gh release create "${{ inputs.sofia-version }}" \
           ../build/Release/ios/Realm.spm.zip \
           ../build/Release/ios/RealmSwift.spm.zip \
-          --title "${{ inputs.sofia-version }} (${{ inputs.realm-version }})" \
+          --title "${{ inputs.sofia-version }} (Realm ${{ inputs.realm-version }})" \
           --notes "Supports Xcode ${{ inputs.xcode-version }}"
