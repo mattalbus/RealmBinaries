@@ -18,7 +18,7 @@ on:
 
 jobs:
   process:
-    runs-on: xcode-27-arm64
+    runs-on: xcode-27
 
     permissions:
       contents: write
