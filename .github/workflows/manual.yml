@@ -5,30 +5,43 @@ on:
     inputs:
       sofia-version:
         description: 'Sofia version'
-        default: '2004.0.3'
+        default: '2005.1.0'
         required: true
       realm-version:
         description: 'Realm version'
-        default: '20.0.4'
+        default: '20.0.5'
         required: true
-      xcode-version:
-        description: 'Xcode version'
+      xcode-26-version:
+        description: 'Xcode version for the "xcode26" variant (CI Bitrise)'
         default: '26.4.1'
+        required: true
+      xcode-27-version:
+        description: 'Xcode version for the "xcode27" variant (postes de dev)'
+        default: '27.0'
         required: true
 
 jobs:
-  process:
-    runs-on: xcode-27
+  build:
+    runs-on: ${{ matrix.runner }}
 
-    permissions:
-      contents: write
-      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - slug: xcode26
+            suffix: Xcode26
+            runner: macos-26
+            xcode: ${{ inputs.xcode-26-version }}
+          - slug: xcode27
+            suffix: Xcode27
+            runner: xcode-27
+            xcode: ${{ inputs.xcode-27-version }}
 
     steps:
     - name: Select Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: "${{ inputs.xcode-version }}"
+        xcode-version: "${{ matrix.xcode }}"
 
     - name: Checkout realm-swift
       uses: actions/checkout@v5
@@ -36,58 +49,82 @@ jobs:
         repository: realm/realm-swift
         ref: "v${{ inputs.realm-version }}"
 
-    - name: Checkout RealmBinaries
-      uses: actions/checkout@v5
-      with:
-        path: realm-binaries
-        token: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Build frameworks
       run: |
         sh build.sh build ios-swift
         cd build/Release/ios
-        ditto -c -k --sequesterRsrc --keepParent Realm.xcframework Realm.spm.zip
-        ditto -c -k --sequesterRsrc --keepParent RealmSwift.xcframework RealmSwift.spm.zip
+        ditto -c -k --sequesterRsrc --keepParent Realm.xcframework Realm-${{ matrix.slug }}.spm.zip
+        ditto -c -k --sequesterRsrc --keepParent RealmSwift.xcframework RealmSwift-${{ matrix.slug }}.spm.zip
 
-    - name: Store Realm.xcframework artifact
+    - name: Compute checksums
+      run: |
+        cd build/Release/ios
+        {
+          echo "realmChecksum${{ matrix.suffix }}=$(swift package compute-checksum Realm-${{ matrix.slug }}.spm.zip)"
+          echo "realmSwiftChecksum${{ matrix.suffix }}=$(swift package compute-checksum RealmSwift-${{ matrix.slug }}.spm.zip)"
+        } > checksums-${{ matrix.slug }}.env
+        cat checksums-${{ matrix.slug }}.env
+
+    - name: Store artifacts
       uses: actions/upload-artifact@v6
       with:
-        name: Realm.spm
-        path: build/Release/ios/Realm.spm.zip
+        name: assets-${{ matrix.slug }}
+        path: |
+          build/Release/ios/Realm-${{ matrix.slug }}.spm.zip
+          build/Release/ios/RealmSwift-${{ matrix.slug }}.spm.zip
+          build/Release/ios/checksums-${{ matrix.slug }}.env
 
-    - name: Store RealmSwift.xcframework artifact
-      uses: actions/upload-artifact@v6
+  release:
+    needs: build
+    runs-on: macos-26
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+    - name: Checkout RealmBinaries
+      uses: actions/checkout@v5
       with:
-        name: RealmSwift.spm
-        path: build/Release/ios/RealmSwift.spm.zip
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Download built assets
+      uses: actions/download-artifact@v6
+      with:
+        path: assets
+        merge-multiple: true
 
     - name: Update Package.swift
-      working-directory: realm-binaries
       run: |
-        REALM_CHECKSUM=$(swift package compute-checksum ../build/Release/ios/Realm.spm.zip)
-        REALMSWIFT_CHECKSUM=$(swift package compute-checksum ../build/Release/ios/RealmSwift.spm.zip)
+        set -euo pipefail
+        # Les deux jobs de build ont chacun déposé un fichier clé=valeur.
+        cat assets/checksums-*.env > /tmp/checksums.env
+        while IFS='=' read -r key value; do
+          [ -n "$key" ] || continue
+          grep -q "^let ${key} = " Package.swift || { echo "clé inconnue dans Package.swift: ${key}"; exit 1; }
+          sed -i '' -E "s|^let ${key} = \".*\"|let ${key} = \"${value}\"|" Package.swift
+        done < /tmp/checksums.env
         sed -i '' -E "s/^let realmVersion = \".*\"/let realmVersion = \"${{ inputs.realm-version }}\"/" Package.swift
         sed -i '' -E "s/^let sofiaVersion = \".*\"/let sofiaVersion = \"${{ inputs.sofia-version }}\"/" Package.swift
-        sed -i '' -E "s/^    let realmChecksum = \".*\"/    let realmChecksum = \"$REALM_CHECKSUM\"/" Package.swift
-        sed -i '' -E "s/^    let realmSwiftChecksum = \".*\"/    let realmSwiftChecksum = \"$REALMSWIFT_CHECKSUM\"/" Package.swift
-        sed -i '' -E "s|^    // Xcode .*|    // Xcode ${{ inputs.xcode-version }}|" Package.swift
+        ! grep -q '= "TBD"' Package.swift || { echo "checksum manquant"; exit 1; }
+        cat Package.swift
 
     - name: Commit Package.swift
-      working-directory: realm-binaries
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add Package.swift
-        git commit -m "Update to Realm ${{ inputs.realm-version }} for Xcode ${{ inputs.xcode-version }}"
+        git commit -m "Update to Realm ${{ inputs.realm-version }} for Xcode ${{ inputs.xcode-26-version }} + ${{ inputs.xcode-27-version }}"
         git push
 
     - name: Create GitHub release
-      working-directory: realm-binaries
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         gh release create "${{ inputs.sofia-version }}" \
-          ../build/Release/ios/Realm.spm.zip \
-          ../build/Release/ios/RealmSwift.spm.zip \
+          assets/Realm-xcode26.spm.zip \
+          assets/RealmSwift-xcode26.spm.zip \
+          assets/Realm-xcode27.spm.zip \
+          assets/RealmSwift-xcode27.spm.zip \
           --title "${{ inputs.sofia-version }} (Realm ${{ inputs.realm-version }})" \
-          --notes "Supports Xcode ${{ inputs.xcode-version }}"
+          --notes "Supports Xcode ${{ inputs.xcode-26-version }} and ${{ inputs.xcode-27-version }}"

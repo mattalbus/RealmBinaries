@@ -3,25 +3,35 @@
 import PackageDescription
 
 let realmVersion = "20.0.5"
-let sofiaVersion = "2005.0.0"
+let sofiaVersion = "2005.1.0"
+
+let realmChecksumXcode26 = "TBD"
+let realmSwiftChecksumXcode26 = "TBD"
+let realmChecksumXcode27 = "TBD"
+let realmSwiftChecksumXcode27 = "TBD"
+
+#if compiler(>=6.4)
+let xcodeSlug = "xcode27"
+let realmChecksum = realmChecksumXcode27
+let realmSwiftChecksum = realmSwiftChecksumXcode27
+#else
+let xcodeSlug = "xcode26"
+let realmChecksum = realmChecksumXcode26
+let realmSwiftChecksum = realmSwiftChecksumXcode26
+#endif
 
 func buildTargets() -> [Target] {
-    let realmUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(sofiaVersion)/Realm.spm.zip"
-    let realmChecksum = "ef3785a82d023b401f037e4e2976177bf4a31386c57dcc2f9bb495d0cb7ff3be"
+    let base = "https://github.com/mattalbus/RealmBinaries/releases/download/\(sofiaVersion)"
 
-    // Xcode 27.0
-    let realmSwiftUrl = "https://github.com/mattalbus/RealmBinaries/releases/download/\(sofiaVersion)/RealmSwift.spm.zip"
-    let realmSwiftChecksum = "9baefd86167602beca0f6dbfdaa6c068529045d65ae5f93f26fd333b1390d804"
-    
     return [
         .binaryTarget(
             name: "Realm",
-            url: realmUrl,
+            url: "\(base)/Realm-\(xcodeSlug).spm.zip",
             checksum: realmChecksum
         ),
         .binaryTarget(
             name: "RealmSwift",
-            url: realmSwiftUrl,
+            url: "\(base)/RealmSwift-\(xcodeSlug).spm.zip",
             checksum: realmSwiftChecksum
         )
     ]
