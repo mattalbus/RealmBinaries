@@ -5,10 +5,10 @@ import PackageDescription
 let realmVersion = "20.0.5"
 let sofiaVersion = "2005.1.0"
 
-let realmChecksumXcode26 = "TBD"
-let realmSwiftChecksumXcode26 = "TBD"
-let realmChecksumXcode27 = "TBD"
-let realmSwiftChecksumXcode27 = "TBD"
+let realmChecksumXcode26 = "68efc28f152d5bc3a7a7e4d25d81035a4d85800d9e2a6fa728649b7c764847da"
+let realmSwiftChecksumXcode26 = "a98ab99d0eaddfdd151e0354ed07737cd2adfa72a6ed33946521aebe55e4a818"
+let realmChecksumXcode27 = "41b894cec8ef1e4e72d283bf4e78b4cfed7a429fc8984297bf8d34a8046d2253"
+let realmSwiftChecksumXcode27 = "3429ad6c3612fc39b19e6a2ac0373c069d838d5b7edcfa52d5891d0b630b4ddc"
 
 #if compiler(>=6.4)
 let xcodeSlug = "xcode27"
